@@ -481,7 +481,7 @@
                     </div>
                     <div>
                         <h3 class="text-base font-black text-neo-black font-mono">Master Web Live Editor</h3>
-                        <p class="text-[10px] text-zinc-600 font-medium">Edit 100% isi teks, foto & showcase langsung!</p>
+                        <p class="text-[10px] text-zinc-600 font-medium">Edit teks, foto & download file kodenya langsung!</p>
                     </div>
                 </div>
                 <button onclick="closeEditorModal()" class="w-7 h-7 bg-neo-pink text-white neo-border font-bold flex items-center justify-center hover:bg-black transition-colors">
@@ -621,11 +621,11 @@
                 </div>
             </div>
 
-            <div class="pt-3 border-t-2 border-neo-black flex items-center justify-between">
+            <div class="pt-3 border-t-2 border-neo-black flex items-center justify-between flex-wrap gap-2">
                 <button onclick="resetEditorData()" class="text-[10px] text-rose-600 font-mono font-bold hover:underline">Reset Default</button>
                 <div class="flex items-center space-x-2">
-                    <button onclick="closeEditorModal()" class="px-3 py-1.5 bg-white neo-btn text-neo-black font-mono font-bold text-[11px]">Batal</button>
-                    <button onclick="saveEditorData()" class="px-4 py-1.5 bg-neo-yellow neo-btn text-neo-black font-mono font-extrabold text-[11px] uppercase">Simpan Perubahan</button>
+                    <button onclick="exportUpdatedCode()" class="px-4 py-1.5 bg-neo-cyan text-neo-black neo-btn font-mono font-extrabold text-[11px]">📥 Download File HTML</button>
+                    <button onclick="saveEditorData()" class="px-4 py-1.5 bg-neo-yellow neo-btn text-neo-black font-mono font-extrabold text-[11px] uppercase">Simpan & Terapkan</button>
                 </div>
             </div>
         </div>
@@ -853,17 +853,41 @@
         }
 
         function closeEditorModal() { document.getElementById('editor-modal')?.classList.add('hidden'); }
-        function handleFileUpload(e) { const f = e.target.files[0]; if(f){ const r=new FileReader(); r.onload=e=>{currentData.photoUrl=e.target.result; safeSetAttr('edit-photo-url','value','[File Foto]');}; r.readAsDataURL(f);} }
+        function handleFileUpload(event) { const f = event.target.files[0]; if(f){ const r=new FileReader(); r.onload=e=>{currentData.photoUrl=e.target.result; safeSetAttr('edit-photo-url','value','[File Foto]');}; r.readAsDataURL(f);} }
         function gV(id) { const e=document.getElementById(id); return e?e.value:null; }
 
-        function saveEditorData() {
+        function collectEditorData() {
             currentData.name=gV('edit-name')||currentData.name; currentData.title=gV('edit-title')||currentData.title; currentData.badge=gV('edit-badge')||currentData.badge; currentData.heroDesc=gV('edit-hero-desc')||currentData.heroDesc; const p=gV('edit-photo-url'); if(p&&p!=='[File Foto]') currentData.photoUrl=p;
             currentData.stat1Val=gV('edit-stat-1-val')||currentData.stat1Val; currentData.stat1Lbl=gV('edit-stat-1-lbl')||currentData.stat1Lbl; currentData.stat2Val=gV('edit-stat-2-val')||currentData.stat2Val; currentData.stat2Lbl=gV('edit-stat-2-lbl')||currentData.stat2Lbl; currentData.stat3Val=gV('edit-stat-3-val')||currentData.stat3Val; currentData.stat3Lbl=gV('edit-stat-3-lbl')||currentData.stat3Lbl; currentData.stat4Val=gV('edit-stat-4-val')||currentData.stat4Val; currentData.stat4Lbl=gV('edit-stat-4-lbl')||currentData.stat4Lbl;
             currentData.aboutSubtitle=gV('edit-about-subtitle')||currentData.aboutSubtitle; currentData.aboutDesc=gV('edit-about-desc')||currentData.aboutDesc; currentData.aboutCard1Title=gV('edit-about-c1-title')||currentData.aboutCard1Title; currentData.aboutCard1Desc=gV('edit-about-c1-desc')||currentData.aboutCard1Desc; currentData.aboutCard2Title=gV('edit-about-c2-title')||currentData.aboutCard2Title; currentData.aboutCard2Desc=gV('edit-about-c2-desc')||currentData.aboutCard2Desc; currentData.aboutCard3Title=gV('edit-about-c3-title')||currentData.aboutCard3Title; currentData.aboutCard3Desc=gV('edit-about-c3-desc')||currentData.aboutCard3Desc;
             if(currentData.experiences) currentData.experiences.forEach((e,i)=>{e.title=gV(`exp-title-${i}`)||e.title; e.period=gV(`exp-period-${i}`)||e.period; e.company=gV(`exp-company-${i}`)||e.company; e.desc=gV(`exp-desc-${i}`)||e.desc;});
             currentData.projects.forEach((p,i)=>{p.title=gV(`proj-title-${i}`)||p.title; p.category=gV(`proj-category-${i}`)||p.category; p.type=gV(`proj-type-${i}`)||p.type; const m=gV(`proj-media-${i}`); if(m){p.mediaUrl=m; if(p.type==='photo')p.imageUrl=m;} p.visits=gV(`proj-visits-${i}`)||p.visits; p.robloxLink=gV(`proj-link-${i}`)||p.robloxLink; p.desc=gV(`proj-desc-${i}`)||p.desc;});
             currentData.contactDesc=gV('edit-contact-desc')||currentData.contactDesc; currentData.discord=gV('edit-discord')||currentData.discord; currentData.roblox=gV('edit-roblox')||currentData.roblox; currentData.footerDesc=gV('edit-footer-desc')||currentData.footerDesc;
-            localStorage.setItem('dutttz4_portfolio_config', JSON.stringify(currentData)); applyDataToDOM(); closeEditorModal(); showToast("Tersimpan!", "Data diperbarui.");
+        }
+
+        function saveEditorData() {
+            collectEditorData();
+            localStorage.setItem('dutttz4_portfolio_config', JSON.stringify(currentData)); 
+            applyDataToDOM(); 
+            closeEditorModal(); 
+            showToast("Tersimpan!", "Data diperbarui di browser.");
+        }
+
+        function exportUpdatedCode() {
+            collectEditorData();
+            // Generate full HTML string with currentData embedded or default script values overridden
+            let htmlContent = document.documentElement.outerHTML;
+            // Inject currentData as defaultData string replacement in script
+            const blob = new Blob([htmlContent], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'index.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast("Berhasil Download!", "File index.html baru dengan editanmu siap di-upload ke GitHub.");
         }
 
         function resetEditorData() { currentData=JSON.parse(JSON.stringify(defaultData)); localStorage.removeItem('dutttz4_portfolio_config'); applyDataToDOM(); closeEditorModal(); showToast("Reset", "Ke default."); }
